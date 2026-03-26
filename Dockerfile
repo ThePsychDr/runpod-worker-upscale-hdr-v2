@@ -56,7 +56,12 @@ RUN git clone --branch n7.1 --depth 1 https://git.ffmpeg.org/ffmpeg.git /tmp/ffm
 
 # ─── Python dependencies ──────────────────────────────────────────────────────
 
-# torch 2.9.1 + torchvision 0.24.1 are pre-installed in the base image with CUDA.
+# torch 2.9.1 is pre-installed in the base image with CUDA 12.8.
+# torchvision must be installed explicitly from the PyTorch CUDA index
+# (the base image does NOT include it). Use --no-deps so pip won't touch torch.
+RUN pip install --no-cache-dir --no-deps torchvision \
+    --index-url https://download.pytorch.org/whl/cu128
+
 # Install AI packages with --no-deps to prevent pip from upgrading torch/torchvision
 # to non-CUDA PyPI versions. Then install their non-torch dependencies separately.
 RUN pip install --no-cache-dir --no-deps \
