@@ -1238,14 +1238,53 @@ class TemporalSmoother:
         return frame_u16
 
 
+class HighlightExpander:
+    """Push specular highlights toward PQ peak while preserving mid-tones.
+
+    strength: 0.0 = off, 1.0 = full expansion
+    threshold: PQ signal level where expansion begins (0.0-1.0, default 0.55 ~ 100 nits)
+    """
+
+    def __init__(self, strength=0.0, threshold=0.55):
+        self.strength = strength
+        self.threshold = threshold
+
+    def expand(self, frame_u16):
+        if self.strength <= 0:
+            return frame_u16
+        t = torch.from_numpy(frame_u16.astype(np.int32)).cuda().float() / 65535.0
+
+        # BT.2020 luminance
+        lum = 0.2627 * t[:, :, 0] + 0.6780 * t[:, :, 1] + 0.0593 * t[:, :, 2]
+
+        # Smoothstep mask: 0 below threshold, ramps to 1 above
+        mask = ((lum - self.threshold) / (1.0 - self.threshold)).clamp(0, 1)
+        mask = mask * mask * (3.0 - 2.0 * mask)
+
+        # Headroom-proportional boost: pixels near 1.0 get less push (prevents clipping)
+        headroom = (1.0 - lum).clamp(0, 1)
+        boost = 1.0 + self.strength * headroom * mask
+
+        # Uniform channel boost preserves color hue
+        t = (t * boost.unsqueeze(-1)).clamp(0, 1)
+
+        return (t * 65535).to(torch.int32).cpu().numpy().astype(np.uint16)
+
+
 def stage4_batch_worker(in_queue, out_queue, model, is_full_range, batch_size=4,
-                        temporal_smooth=0.15):
+                        temporal_smooth=0.15, highlight_boost=0.0):
     """Stage 4 worker that collects frames into batches for efficient ITM.
 
     temporal_smooth: EMA alpha for temporal brightness smoothing (0 = off, 0.1-0.2 recommended).
     """
     batch = []
     smoother = TemporalSmoother(alpha=temporal_smooth)
+    expander = HighlightExpander(strength=highlight_boost)
+
+    def _postprocess(frame):
+        frame = smoother.smooth(frame)
+        frame = expander.expand(frame)
+        return frame
 
     try:
         while True:
@@ -1255,14 +1294,14 @@ def stage4_batch_worker(in_queue, out_queue, model, is_full_range, batch_size=4,
                 if batch:
                     results = run_itm_batch(model, batch, is_full_range)
                     for r in results:
-                        out_queue.put(smoother.smooth(r))
+                        out_queue.put(_postprocess(r))
                 out_queue.put(item)
                 break
             batch.append(item)
             if len(batch) >= batch_size:
                 results = run_itm_batch(model, batch, is_full_range)
                 for r in results:
-                    out_queue.put(smoother.smooth(r))
+                    out_queue.put(_postprocess(r))
                 batch = []
     except Exception as e:
         out_queue.put(_PipelineError("S4", e))
@@ -1314,6 +1353,7 @@ def run_pipeline_threaded(frame_q, s1, s2, gfpgan, itm_model,
     dn = args.dn
     face_strength = args.face_strength
     temporal_smooth = getattr(args, 'temporal_smooth', 0.15)
+    highlight_boost = getattr(args, 'highlight_boost', 0.0)
 
     # Dynamic ITM batch size based on VRAM and output resolution
     batch_size = args.batch if args.batch > 0 else 4
@@ -1375,7 +1415,7 @@ def run_pipeline_threaded(frame_q, s1, s2, gfpgan, itm_model,
         t4 = threading.Thread(
             target=stage4_batch_worker, daemon=True,
             args=(q_after_s3, q_after_s4, itm_model,
-                  is_full_range, batch_size, temporal_smooth))
+                  is_full_range, batch_size, temporal_smooth, highlight_boost))
         threads.append(t4)
 
     # Encoder/writer thread
@@ -2396,6 +2436,14 @@ def parse_args():
             "HDR temporal brightness smoothing (EMA alpha). "
             "0 = off, 0.15 = default, higher = more responsive. "
             "Prevents per-frame brightness flickering from ITM."
+        ),
+    )
+    p.add_argument(
+        "--highlight-boost", type=float, default=0.0,
+        help=(
+            "Post-ITM specular highlight expansion (0.0-1.0). "
+            "Pushes bright regions toward PQ peak for punchier highlights. "
+            "0.0 = off (default), 0.3 = subtle, 0.6 = strong."
         ),
     )
     p.add_argument("--workers", type=int, default=8, help="FFmpeg decode threads")

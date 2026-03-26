@@ -7,6 +7,13 @@ FROM runpod/pytorch:1.0.3-cu1281-torch291-ubuntu2204
 LABEL maintainer="thepsych"
 LABEL description="AI video upscaling pipeline — serverless worker"
 
+# ─── Fix python3 symlink ─────────────────────────────────────────────────────
+# Base image has Python 3.12 (with torch) but python3 resolves to system 3.10.
+# All pip installs go to 3.12, so python3 must point there too.
+RUN ln -sf /usr/bin/python3.12 /usr/bin/python3 && \
+    ln -sf /usr/bin/python3.12 /usr/bin/python && \
+    python3 --version
+
 # ─── System dependencies ─────────────────────────────────────────────────────
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

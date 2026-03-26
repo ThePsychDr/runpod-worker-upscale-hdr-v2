@@ -24,6 +24,7 @@ Job input schema:
     "force_full_range": false,            # optional
     "preserve_grain": false,              # optional
     "grain_strength": 1.0,                # optional
+    "highlight_boost": 0.0,              # optional, 0.0-1.0 (specular highlight expansion)
     "test_mode": false                    # optional — Hub test mode
 }
 """
@@ -45,7 +46,7 @@ except ImportError:
 
 # ─── Startup: runs once when container starts (included in FlashBoot snapshot)
 
-_VERSION = "v1.0.7"
+_VERSION = "v1.0.13"
 
 print("=" * 50)
 print(f"  AI Upscale & HDR Pipeline — Serverless Worker {_VERSION}")
@@ -141,6 +142,8 @@ def _build_cmd(input_path, output_path, job_input):
         cmd.extend(["--deinterlace", str(val)])
     if "temporal_smooth" in job_input:
         cmd.extend(["--temporal-smooth", str(job_input["temporal_smooth"])])
+    if "highlight_boost" in job_input:
+        cmd.extend(["--highlight-boost", str(job_input["highlight_boost"])])
 
     # Boolean flags
     if no_face:
