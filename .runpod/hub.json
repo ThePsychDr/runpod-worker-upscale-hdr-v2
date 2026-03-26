@@ -42,6 +42,91 @@
           "description": "Bucket for video input/output storage",
           "required": true
         }
+      },
+      {
+        "key": "DEFAULT_HDR_MODE",
+        "input": {
+          "name": "HDR Mode",
+          "type": "options",
+          "options": ["hdr10", "hdr10plus", "sdr"],
+          "default": "hdr10",
+          "description": "hdr10 = static metadata, hdr10plus = per-frame dynamic metadata (slower), sdr = no HDR"
+        }
+      },
+      {
+        "key": "DEFAULT_CRF",
+        "input": {
+          "name": "Quality (CRF)",
+          "type": "number",
+          "min": 0,
+          "max": 51,
+          "default": 18,
+          "description": "Lower = better quality, larger file. 18 is visually lossless."
+        }
+      },
+      {
+        "key": "DEFAULT_TARGET",
+        "input": {
+          "name": "Target Height",
+          "type": "options",
+          "options": ["0", "1080", "1440", "2160"],
+          "default": "0",
+          "description": "Output resolution height. 0 = auto from input (720p→4K, 1080p→4K, etc.)"
+        }
+      },
+      {
+        "key": "DEFAULT_DN",
+        "input": {
+          "name": "Denoise Strength",
+          "type": "number",
+          "min": -1,
+          "max": 1,
+          "default": -1,
+          "description": "0.0-1.0 manual strength, -1 = auto from bitrate"
+        }
+      },
+      {
+        "key": "DEFAULT_FACE_STRENGTH",
+        "input": {
+          "name": "Face Restoration Blend",
+          "type": "number",
+          "min": 0,
+          "max": 1,
+          "default": 0.5,
+          "description": "0.0 = aggressive restoration, 1.0 = bypass. 0.5 is balanced.",
+          "advanced": true
+        }
+      },
+      {
+        "key": "DEFAULT_NO_FACE",
+        "input": {
+          "name": "Skip Face Restoration",
+          "type": "boolean",
+          "default": false,
+          "description": "Skip GFPGAN face restoration entirely",
+          "advanced": true
+        }
+      },
+      {
+        "key": "DEFAULT_PRESERVE_GRAIN",
+        "input": {
+          "name": "Preserve Film Grain",
+          "type": "boolean",
+          "default": false,
+          "description": "Re-apply film grain after processing (for music videos, cinematic content)",
+          "advanced": true
+        }
+      },
+      {
+        "key": "DEFAULT_PRESET",
+        "input": {
+          "name": "Encoder Preset",
+          "type": "options",
+          "options": ["p1", "p2", "p3", "p4", "p5", "p6", "p7"],
+          "default": "p7",
+          "description": "p1 = fastest encode, p7 = best quality. p7 recommended.",
+          "advanced": true
+        }
       }
     ]
   }

@@ -82,8 +82,23 @@ def _sanitize_filename(name):
     return re.sub(r'[|&;<>\"\' `$\\!#(){}[\]*?~]', '_', name)
 
 
+def _env_default(key, fallback, cast=str):
+    """Read a default from env var, with fallback. Job input always overrides."""
+    val = os.environ.get(key)
+    if val is None:
+        return fallback
+    try:
+        return cast(val)
+    except (ValueError, TypeError):
+        return fallback
+
+
 def _build_cmd(input_path, output_path, job_input):
-    """Build the upscale_hdr.py CLI command from job input params."""
+    """Build the upscale_hdr.py CLI command from job input params.
+
+    Each parameter checks job_input first, then falls back to DEFAULT_*
+    env vars (configurable in Hub UI), then hardcoded defaults.
+    """
     cmd = [
         "python", "-u", "/workspace/upscale_hdr.py",
         "-i", input_path,
@@ -91,37 +106,52 @@ def _build_cmd(input_path, output_path, job_input):
         "--no-trt",
     ]
 
+    # Resolve settings: job input > env default > hardcoded default
+    hdr_mode = job_input.get("hdr_mode", _env_default("DEFAULT_HDR_MODE", "hdr10"))
+    crf = job_input.get("crf", _env_default("DEFAULT_CRF", 18, int))
+    preset = job_input.get("preset", _env_default("DEFAULT_PRESET", "p7"))
+    target = job_input.get("target", _env_default("DEFAULT_TARGET", 0, int))
+    dn = job_input.get("dn", _env_default("DEFAULT_DN", -1, float))
+    face_strength = job_input.get("face_strength", _env_default("DEFAULT_FACE_STRENGTH", 0.5, float))
+    no_face = job_input.get("no_face", _env_default("DEFAULT_NO_FACE", False, lambda v: v.lower() in ("true", "1", "yes")))
+    preserve_grain = job_input.get("preserve_grain", _env_default("DEFAULT_PRESERVE_GRAIN", False, lambda v: v.lower() in ("true", "1", "yes")))
+
+    # Value params
     param_map = {
-        "batch": "--batch",
-        "workers": "--workers",
-        "dn": "--dn",
-        "face_strength": "--face-strength",
-        "itm": "--itm",
-        "hdr_mode": "--hdr-mode",
-        "crf": "--crf",
-        "preset": "--preset",
-        "deinterlace": "--deinterlace",
-        "target": "--target",
-        "temporal_smooth": "--temporal-smooth",
+        "batch": ("--batch", job_input.get("batch", 4)),
+        "workers": ("--workers", job_input.get("workers", 16)),
+        "dn": ("--dn", dn),
+        "face_strength": ("--face-strength", face_strength),
+        "hdr_mode": ("--hdr-mode", hdr_mode),
+        "crf": ("--crf", crf),
+        "preset": ("--preset", preset),
+        "target": ("--target", target),
     }
 
-    for key, flag in param_map.items():
-        if key in job_input:
-            val = job_input[key]
-            if key == "deinterlace" and isinstance(val, bool):
-                val = "on" if val else "auto"
-            cmd.extend([flag, str(val)])
+    for key, (flag, val) in param_map.items():
+        cmd.extend([flag, str(val)])
+
+    # Optional value params (only if present in job input)
+    if "itm" in job_input:
+        cmd.extend(["--itm", str(job_input["itm"])])
+    if "deinterlace" in job_input:
+        val = job_input["deinterlace"]
+        if isinstance(val, bool):
+            val = "on" if val else "auto"
+        cmd.extend(["--deinterlace", str(val)])
+    if "temporal_smooth" in job_input:
+        cmd.extend(["--temporal-smooth", str(job_input["temporal_smooth"])])
 
     # Boolean flags
-    if job_input.get("no_face"):
+    if no_face:
         cmd.append("--no-face")
-    if job_input.get("no_itm"):
+    if hdr_mode == "sdr" or job_input.get("no_itm"):
         cmd.append("--no-itm")
     if job_input.get("fp16", True):
         cmd.append("--fp16")
     if job_input.get("force_full_range"):
         cmd.append("--force-full-range")
-    if job_input.get("preserve_grain"):
+    if preserve_grain:
         cmd.append("--preserve-grain")
 
     # Grain strength (float param)
