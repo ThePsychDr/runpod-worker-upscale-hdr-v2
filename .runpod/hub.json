@@ -6,6 +6,7 @@
   "config": {
     "runsOn": "GPU",
     "containerDiskInGb": 75,
+    "allowedCudaVersions": ["12.8"],
     "endpointType": "LB"
   }
 }
