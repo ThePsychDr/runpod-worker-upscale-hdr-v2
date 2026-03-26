@@ -107,7 +107,7 @@ WORKDIR /workspace
 
 COPY src/upscale_hdr.py    /workspace/upscale_hdr.py
 COPY src/grade_detect.py   /workspace/grade_detect.py
-COPY src/handler.py        /workspace/handler.py
+COPY handler.py            /workspace/handler.py
 
 # ─── Bake models into image (eliminates cold start download) ──────────────────
 
