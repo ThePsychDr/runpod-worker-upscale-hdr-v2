@@ -1,0 +1,48 @@
+{
+  "title": "AI Video Upscale & HDR",
+  "description": "Four-stage GPU pipeline for video upscaling: artifact cleanup (Real-ESRGAN), AI upscale to 4K (RealESRGAN_x4plus), face restoration (GFPGAN), and SDR-to-HDR10 tone mapping (HDRTVDM). Processes 720p→4K at ~2s/frame on RTX 4090.",
+  "type": "serverless",
+  "category": "video",
+  "config": {
+    "runsOn": "GPU",
+    "containerDiskInGb": 75,
+    "gpuCount": 1,
+    "gpuIds": "ADA_24,ADA_24_PRO,ADA_48,ADA_48_PRO,AMPERE_24,AMPERE_48",
+    "env": [
+      {
+        "key": "BUCKET_ENDPOINT_URL",
+        "input": {
+          "name": "S3 Endpoint URL",
+          "type": "string",
+          "description": "S3-compatible endpoint URL (e.g., https://account-id.r2.cloudflarestorage.com for Cloudflare R2)",
+          "required": true
+        }
+      },
+      {
+        "key": "BUCKET_ACCESS_KEY_ID",
+        "input": {
+          "name": "S3 Access Key ID",
+          "type": "string",
+          "required": true
+        }
+      },
+      {
+        "key": "BUCKET_ACCESS_KEY_SECRET",
+        "input": {
+          "name": "S3 Secret Access Key",
+          "type": "string",
+          "required": true
+        }
+      },
+      {
+        "key": "BUCKET_NAME",
+        "input": {
+          "name": "S3 Bucket Name",
+          "type": "string",
+          "description": "Bucket for video input/output storage",
+          "required": true
+        }
+      }
+    ]
+  }
+}
