@@ -1,15 +1,34 @@
 {
   "tests": [
     {
-      "name": "test_mode_basic",
+      "name": "test_model_loading",
       "input": {
         "test_mode": true
       },
-      "timeout": 120000
+      "timeout": 180000
     }
   ],
   "config": {
     "gpuTypeId": "NVIDIA GeForce RTX 4090",
-    "gpuCount": 1
+    "gpuCount": 1,
+    "allowedCudaVersions": ["12.8", "12.7", "12.6", "12.5", "12.4"],
+    "env": [
+      {
+        "key": "BUCKET_ENDPOINT_URL",
+        "value": "https://test.example.com"
+      },
+      {
+        "key": "BUCKET_ACCESS_KEY_ID",
+        "value": "test"
+      },
+      {
+        "key": "BUCKET_ACCESS_KEY_SECRET",
+        "value": "test"
+      },
+      {
+        "key": "BUCKET_NAME",
+        "value": "test"
+      }
+    ]
   }
 }

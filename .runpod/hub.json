@@ -8,6 +8,7 @@
     "containerDiskInGb": 75,
     "gpuCount": 1,
     "gpuIds": "ADA_24,ADA_24_PRO,ADA_48,ADA_48_PRO,AMPERE_24,AMPERE_48",
+    "allowedCudaVersions": ["12.8", "12.7", "12.6", "12.5", "12.4"],
     "env": [
       {
         "key": "BUCKET_ENDPOINT_URL",
@@ -47,10 +48,14 @@
         "key": "DEFAULT_HDR_MODE",
         "input": {
           "name": "HDR Mode",
-          "type": "options",
-          "options": ["hdr10", "hdr10plus", "sdr"],
-          "default": "hdr10",
-          "description": "hdr10 = static metadata, hdr10plus = per-frame dynamic metadata (slower), sdr = no HDR"
+          "type": "string",
+          "description": "hdr10 = static metadata, hdr10plus = per-frame dynamic metadata (slower), sdr = no HDR",
+          "options": [
+            {"label": "HDR10 (Static Metadata)", "value": "hdr10"},
+            {"label": "HDR10+ (Dynamic Metadata)", "value": "hdr10plus"},
+            {"label": "SDR (No HDR)", "value": "sdr"}
+          ],
+          "default": "hdr10"
         }
       },
       {
@@ -68,10 +73,15 @@
         "key": "DEFAULT_TARGET",
         "input": {
           "name": "Target Height",
-          "type": "options",
-          "options": ["0", "1080", "1440", "2160"],
-          "default": "0",
-          "description": "Output resolution height. 0 = auto from input (720p→4K, 1080p→4K, etc.)"
+          "type": "string",
+          "description": "Output resolution height. 0 = auto from input (720p→4K, 1080p→4K, etc.)",
+          "options": [
+            {"label": "Auto (from input)", "value": "0"},
+            {"label": "1080p", "value": "1080"},
+            {"label": "1440p", "value": "1440"},
+            {"label": "4K (2160p)", "value": "2160"}
+          ],
+          "default": "0"
         }
       },
       {
@@ -100,20 +110,24 @@
       {
         "key": "DEFAULT_NO_FACE",
         "input": {
-          "name": "Skip Face Restoration",
           "type": "boolean",
-          "default": false,
+          "name": "Skip Face Restoration",
           "description": "Skip GFPGAN face restoration entirely",
+          "default": false,
+          "trueValue": "true",
+          "falseValue": "false",
           "advanced": true
         }
       },
       {
         "key": "DEFAULT_PRESERVE_GRAIN",
         "input": {
-          "name": "Preserve Film Grain",
           "type": "boolean",
-          "default": false,
+          "name": "Preserve Film Grain",
           "description": "Re-apply film grain after processing (for music videos, cinematic content)",
+          "default": false,
+          "trueValue": "true",
+          "falseValue": "false",
           "advanced": true
         }
       },
@@ -121,10 +135,15 @@
         "key": "DEFAULT_PRESET",
         "input": {
           "name": "Encoder Preset",
-          "type": "options",
-          "options": ["p1", "p2", "p3", "p4", "p5", "p6", "p7"],
+          "type": "string",
+          "description": "p1 = fastest encode, p7 = best quality",
+          "options": [
+            {"label": "p7 (Best Quality)", "value": "p7"},
+            {"label": "p5 (Balanced)", "value": "p5"},
+            {"label": "p3 (Fast)", "value": "p3"},
+            {"label": "p1 (Fastest)", "value": "p1"}
+          ],
           "default": "p7",
-          "description": "p1 = fastest encode, p7 = best quality. p7 recommended.",
           "advanced": true
         }
       }
