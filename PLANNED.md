@@ -8,18 +8,40 @@
 
 ## TensorRT Acceleration (private builds only)
 
-TRT engines are GPU-architecture-specific — an engine built on Ada (4090) won't run on Hopper (H100) or Ampere (A40). Since serverless assigns arbitrary GPU types, TRT acceleration is not viable for public Hub releases. TRT support is being testeded on fixed-GPU deployments (pods, local).
+TRT engines are GPU-architecture-specific — an engine built on Ada (4090) won't run on Hopper (H100) or Ampere (A40). Since serverless assigns arbitrary GPU types, TRT acceleration is not viable for public Hub releases. TRT support is being tested on fixed-GPU deployments (pods, local).
 
 ## Implemented
 
-- **Manual chunk splitting** — `start_time` and `chunk_duration` parameters allow processing a segment of the video. Users can manually split a long video into chunks, submit each as a separate job, and concatenate outputs locally with `ffmpeg -f concat`
-- **Per-video adaptive denoise** — `dn: -1` auto-detects optimal denoise strength from source resolution + bitrate via `recommend_dn()`. Applied uniformly to the entire video
+### Manual Chunk Splitting
+
+`start_time` and `chunk_duration` parameters allow processing a segment of the video. Split long videos across multiple workers by submitting parallel jobs:
+
+```bash
+# Split a 5-minute video into 5 × 60s chunks across 5 workers
+for i in 0 60 120 180 240; do
+  curl -s https://api.runpod.ai/v2/YOUR_ENDPOINT/run \
+    -H "Authorization: Bearer $KEY" \
+    -H "Content-Type: application/json" \
+    -d "{\"input\": {
+      \"video_url\": \"input/video.mp4\",
+      \"start_time\": $i,
+      \"chunk_duration\": 60,
+      \"target\": 2160
+    }}"
+done
+
+# After all jobs complete, concatenate locally:
+# 1. Create file list
+for f in chunk_*.mkv; do echo "file '$f'" >> list.txt; done
+# 2. Lossless concat (no re-encode)
+ffmpeg -f concat -safe 0 -i list.txt -c copy final.mkv
+```
+
+### Per-Video Adaptive Denoise
+
+`dn: -1` auto-detects optimal denoise strength from source resolution + bitrate via `recommend_dn()`. Applied uniformly to the entire video. Threshold table covers 480p through 1080p+ at various bitrate ranges.
 
 ## Planned
-
-### Auto Job Orchestration
-
-Handler receives a single job, calculates chunks based on video duration and available workers, submits N sub-jobs via the RunPod API, polls for completion, and concatenates the output segments into a single file. Eliminates the need for manual chunk coordination.
 
 ### Per-Scene Adaptive Denoise (research)
 
