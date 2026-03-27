@@ -105,23 +105,22 @@ Input videos are read from the bucket via `video_url`. Output is uploaded to `ou
 |-------|------|---------|-------------|
 | `video_url` | string | **required** | S3/R2 key or URL to input video |
 | `output_filename` | string | auto | Output filename |
-| `scale` | int | 2 | Upscale factor (1, 2, or 4) |
-| `dn` | float | -1 (auto) | Denoise strength (0.0–1.0, -1 = auto from bitrate) |
-| `no_denoise` | bool | false | Skip denoising entirely |
+| `target` | int | auto | Output height in pixels (e.g. `1440`, `2160`). Auto-selects based on source resolution and bitrate |
+| `dn` | float | auto | Denoise strength in upscaler (0.0–1.0, -1 = auto from resolution + bitrate) |
+| `no_denoise` | bool | false | Skip the first-stage artifact cleanup pass |
 | `face_strength` | float | 0.5 | Face restoration blend (0.0 = aggressive, 1.0 = bypass) |
 | `no_face` | bool | false | Skip face restoration |
-| `no_itm` | bool | false | Skip HDR, output SDR |
+| `no_itm` | bool | false | Skip HDR tone mapping, output SDR |
 | `itm` | string | params_3DM | HDR checkpoint (`params_3DM`, `params_DaVinci`) |
 | `hdr_mode` | string | hdr10 | HDR output mode (`hdr10`, `hdr10plus`) |
 | `crf` | int | 18 | Encoder quality (0–51, lower = better) |
 | `preset` | string | p7 | Encoder preset (p1–p7, p7 = best quality) |
 | `fp16` | bool | true | FP16 inference (faster, less VRAM) |
-| `target` | int | 0 (auto) | Force output height (e.g. 2160) |
 | `force_full_range` | bool | false | Treat input as full range (pc) |
 | `preserve_grain` | bool | false | Re-apply film grain after processing |
 | `grain_strength` | float | 1.0 | Grain intensity multiplier (0.0–2.0) |
 | `highlight_boost` | float | 0.0 | Specular highlight expansion (0.0–1.0) |
-| `temporal_smooth` | float | — | Temporal smoothing strength |
+| `temporal_smooth` | float | — | Temporal smoothing to reduce frame-to-frame flicker |
 | `deinterlace` | string | auto | Deinterlace mode (`auto`/`on`/`off`) |
 | `batch` | int | 4 | ITM batch size |
 | `workers` | int | 16 | Decode threads |
@@ -153,9 +152,6 @@ This worker code is released under the MIT License. Model weights are subject to
 
 | Version | Change |
 |---------|--------|
-| v1.0.15 | Remove LB endpoint type — handler uses serverless pattern |
-| v1.0.14 | Require CUDA 12.8 nodes for testing |
-| v1.0.12 | Fix torchvision import — split install/verify into separate steps |
-| v1.0.10 | Use Python imports for patching instead of filesystem search |
-| v1.0.7 | Fix torchvision eviction — install as final pip step |
+| v1.1.0 | First stable release — all build fixes resolved, end-to-end tested on RunPod Hub |
+| v1.0.x | Build iteration — torchvision install ordering, CUDA 12.8 compat, serverless endpoint fix |
 | v1.0.0 | Initial release — 4-stage pipeline with baked models |

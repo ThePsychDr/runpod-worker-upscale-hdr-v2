@@ -100,9 +100,7 @@ ENV PYTHONPATH="/workspace/hdrtvdm"
 # Install torchvision AFTER every other pip step so nothing can evict it.
 # --no-deps prevents pip from pulling a CPU-only torch alongside it.
 RUN pip install --no-cache-dir --no-deps torchvision==0.24.1+cu128 \
-    --index-url https://download.pytorch.org/whl/cu128 && \
-    pip show torchvision && \
-    python3 -c "import sys; print('sys.path:', sys.path)"
+    --index-url https://download.pytorch.org/whl/cu128
 
 # Verify torchvision + create functional_tensor shim (separate RUN to flush pip caches)
 RUN python3 -c "import torchvision; print(f'torchvision {torchvision.__version__} installed')" && \

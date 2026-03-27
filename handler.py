@@ -6,25 +6,27 @@ runs upscale_hdr.py, and returns the output URL.
 
 Job input schema:
 {
-    "video_url": "https://...",           # presigned S3 URL to input video
+    "video_url": "input/video.mp4",       # required — S3/R2 key or URL
     "output_filename": "my_video.mkv",    # optional, defaults to input name + _hdr.mkv
-    "batch": 4,                           # optional, default 4
-    "workers": 16,                        # optional, default 16
-    "dn": -1,                             # optional, -1 = auto
+    "target": 1440,                       # optional, output height (auto if omitted)
+    "dn": -1,                             # optional, -1 = auto from resolution + bitrate
+    "no_denoise": false,                  # optional, skip first-stage artifact cleanup
     "face_strength": 0.5,                 # optional
-    "no_face": false,                     # optional
-    "no_itm": false,                      # optional
-    "itm": "params_3DM",                  # optional
+    "no_face": false,                     # optional, skip face restoration
+    "no_itm": false,                      # optional, skip HDR tone mapping
+    "itm": "params_3DM",                  # optional, HDR checkpoint
     "hdr_mode": "hdr10",                  # optional
     "crf": 18,                            # optional
     "preset": "p7",                       # optional
     "fp16": true,                         # optional
     "deinterlace": "auto",               # optional
-    "target": 0,                          # optional
     "force_full_range": false,            # optional
     "preserve_grain": false,              # optional
     "grain_strength": 1.0,                # optional
     "highlight_boost": 0.0,              # optional, 0.0-1.0 (specular highlight expansion)
+    "temporal_smooth": 0.4,              # optional, reduce frame-to-frame flicker
+    "batch": 4,                           # optional, ITM batch size
+    "workers": 16,                        # optional, decode threads
     "test_mode": false                    # optional — Hub test mode
 }
 """
