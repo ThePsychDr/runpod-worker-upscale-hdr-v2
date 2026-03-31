@@ -48,7 +48,7 @@ except ImportError:
 
 # ─── Startup: runs once when container starts (included in FlashBoot snapshot)
 
-_VERSION = "v1.0.13"
+_VERSION = "v4.1"
 
 print("=" * 50)
 print(f"  AI Upscale & HDR Pipeline — Serverless Worker {_VERSION}")
