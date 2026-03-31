@@ -152,6 +152,9 @@ This worker code is released under the MIT License. Model weights are subject to
 
 | Version | Change |
 |---------|--------|
+| v1.2.2 | Fix Docker build (use CUDA runtime API, no nvcc required) + fix Hub test GPU availability |
+| v1.2.1 | Worker version bump to v4.1 |
+| v1.2.0 | Tiled ITM inference — 4K HDR on 24GB GPUs (RTX 4090, A5000, A6000) without OOM. ~15x faster than guide fallback |
 | v1.1.0 | First stable release — all build fixes resolved, end-to-end tested on RunPod Hub |
 | v1.0.x | Build iteration — torchvision install ordering, CUDA 12.8 compat, serverless endpoint fix |
 | v1.0.0 | Initial release — 4-stage pipeline with baked models |
