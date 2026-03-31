@@ -125,8 +125,9 @@ t=open(p).read(); \
 t=t.replace('models.resnet50(pretrained=False)', 'models.resnet50(weights=None)'); \
 open(p,'w').write(t); print(f'Patched {p}')"
 
-# ─── Project files ────────────────────────────────────────────────────────────
+# ─── Project files (cache-bust: any code change forces rebuild from here) ─────
 
+ARG CACHEBUST=1
 WORKDIR /workspace
 
 COPY src/upscale_hdr.py    /workspace/upscale_hdr.py
