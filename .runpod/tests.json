@@ -9,9 +9,8 @@
     }
   ],
   "config": {
-    "gpuTypeId": "NVIDIA L4",
+    "gpuTypeId": "NVIDIA GeForce RTX 3090",
     "gpuCount": 1,
-    "allowedCudaVersions": ["12.8"],
     "env": [
       {
         "key": "BUCKET_ENDPOINT_URL",
