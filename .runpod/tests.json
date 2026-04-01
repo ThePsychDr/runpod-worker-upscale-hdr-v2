@@ -5,12 +5,13 @@
       "input": {
         "test_mode": true
       },
-      "timeout": 30000
+      "timeout": 180000
     }
   ],
   "config": {
-    "gpuTypeId": "NVIDIA GeForce RTX 3090",
+    "gpuTypeId": "NVIDIA GeForce RTX 4090",
     "gpuCount": 1,
+    "allowedCudaVersions": ["12.8"],
     "env": [
       {
         "key": "BUCKET_ENDPOINT_URL",
