@@ -136,6 +136,62 @@ Input videos are read from the bucket via `video_url`. Output is uploaded to `ou
 | 3 | GFPGANv1.4 | Face restoration (auto-detected, skipped if no faces) |
 | 4 | HDRTVDM (params_3DM) | SDR → HDR10 inverse tone mapping |
 
+## GPU Compatibility
+
+**Base image:** `runpod/pytorch:1.0.3-cu1281-torch291-ubuntu2204` (PyTorch 2.9.1 + CUDA 12.8.1)
+**Minimum:** CUDA compute capability sm_80+ with 24GB VRAM for full 4K pipeline.
+
+### RunPod Pools
+
+| Pool ID | GPUs | VRAM | Arch | Status |
+|---------|------|------|------|--------|
+| `ADA_24` | RTX 4090 | 24GB | Ada (sm_89) | **Proven** — primary test GPU, best cost/perf |
+| `ADA_48_PRO` | L40, L40S, RTX 6000 Ada | 48GB | Ada (sm_89) | **Proven** (L40S) — no tiling needed |
+| `AMPERE_24` | L4, A5000, RTX 3090 | 24GB | Ada/Ampere (sm_86–89) | **Compatible** — all 3 GPUs have NVENC/NVDEC, TF32 tensor cores, 24GB VRAM |
+| `AMPERE_48` | A6000, A40 | 48GB | Ampere (sm_86) | **Compatible** — ~3s/frame, no tiling needed |
+| `AMPERE_80` | A100 | 80GB | Ampere (sm_80) | Compatible — no NVENC (SDR encode falls back to libx265 CPU, HDR unaffected) |
+| `ADA_80_PRO` | H100 | 80GB | Hopper (sm_90) | Compatible — overkill for this workload |
+| `HOPPER_141` | H200 | 141GB | Hopper (sm_90) | Compatible — overkill |
+| `AMPERE_16` | A4000, A4500, RTX 4000/2000 | 16GB | Ampere (sm_86) | Tight — heavy tiling required, max ~1440p practical |
+
+### NOT supported on serverless (Blackwell)
+
+RTX 5090, RTX 5080, B200, RTX PRO 6000 — Blackwell architecture (sm_100/sm_120).
+
+**Why:** The serverless base image (`runpod/pytorch:1.0.3`) ships PyTorch 2.9.1 which was released before Blackwell GPUs existed. PyTorch 2.9.1 does not include sm_100 or sm_120 CUDA kernels, so any CUDA operation fails immediately on Blackwell hardware. This was tested — the worker crashes on startup when assigned a 5090.
+
+**When will it work:** When RunPod updates their base image to PyTorch 2.11+ (which added Blackwell support). No code changes needed on our side — just a base image swap.
+
+**Local workaround:** The local Dockerfile uses `pytorch/pytorch:2.11.0-cuda12.8-cudnn9-runtime` which supports Blackwell. RTX 5090 works locally.
+
+### Architecture Details
+
+| Feature | Required | Used For |
+|---------|----------|----------|
+| CUDA sm_80+ | Yes | PyTorch 2.9.1 minimum compute capability |
+| 24GB+ VRAM | Recommended | 4K output without tiling (16GB works with tiling up to ~1440p) |
+| TF32 tensor cores | Recommended | ~20-30% matmul speedup (Ampere+ all have this) |
+| NVDEC | Optional | h264_cuvid hardware decode — falls back to CPU if unavailable |
+| NVENC | Optional | hevc_nvenc for SDR encode only — HDR always uses libx265 (CPU) |
+| FP16 | Yes (default) | Half-precision inference for all 4 stages |
+
+### ITM Inference Strategy
+
+Stage 4 (HDR tone mapping) uses a 3-step VRAM fallback:
+
+1. **Direct full-frame** — best quality, fastest. Works when VRAM fits the entire output frame
+2. **Tiled inference** — same quality, overlapping 960px tiles with linear blend seams. Fits 4K on 24GB GPUs. ~15x faster than guide fallback
+3. **Guide-based ratio transfer** — always works regardless of VRAM. Slightly less detail
+
+### Recommended Endpoint GPU Priority
+
+For best cost/performance, select these pools in order:
+
+1. `ADA_24` (RTX 4090) — $0.00031/s, ~2.0s/frame
+2. `ADA_48_PRO` (L40S/L40) — $0.00053/s, ~2.0s/frame
+3. `AMPERE_24` (L4/A5000/3090) — $0.00019/s, ~2.5-3.5s/frame (est.)
+4. `AMPERE_48` (A6000/A40) — $0.00034/s, ~3.0s/frame
+
 ## Model Licenses
 
 | Model | License | Source |
@@ -152,6 +208,7 @@ This worker code is released under the MIT License. Model weights are subject to
 
 | Version | Change |
 |---------|--------|
+| v1.7.3 | Use `ADA_24` pool tier ID for Hub tests (replaces legacy GPU name) |
 | v1.7.2 | Repo consolidation release — remove CACHEBUST ARG, revert test config to proven RTX 4090 settings, fix `no_denoise` flag, update docs |
 | v1.7.1 | NVENC two-pass encode (last release on `runpod-video-upscale-hdr`) |
 | v1.2.0 | Tiled ITM inference — 4K HDR on 24GB GPUs without OOM. ~15x faster than guide fallback |
