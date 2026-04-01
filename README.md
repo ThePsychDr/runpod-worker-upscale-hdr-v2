@@ -152,10 +152,8 @@ This worker code is released under the MIT License. Model weights are subject to
 
 | Version | Change |
 |---------|--------|
-| v1.2.3 | Fix `no_denoise` flag not being passed to pipeline CLI |
-| v1.2.2 | Fix Docker build (use CUDA runtime API, no nvcc required) + fix Hub test GPU availability |
-| v1.2.1 | Worker version bump to v4.1 |
-| v1.2.0 | Tiled ITM inference — 4K HDR on 24GB GPUs (RTX 4090, A5000, A6000) without OOM. ~15x faster than guide fallback |
+| v1.7.2 | Repo consolidation release — remove CACHEBUST ARG, revert test config to proven RTX 4090 settings, fix `no_denoise` flag, update docs |
+| v1.7.1 | NVENC two-pass encode (last release on `runpod-video-upscale-hdr`) |
+| v1.2.0 | Tiled ITM inference — 4K HDR on 24GB GPUs without OOM. ~15x faster than guide fallback |
 | v1.1.0 | First stable release — all build fixes resolved, end-to-end tested on RunPod Hub |
-| v1.0.x | Build iteration — torchvision install ordering, CUDA 12.8 compat, serverless endpoint fix |
 | v1.0.0 | Initial release — 4-stage pipeline with baked models |
