@@ -1,6 +1,6 @@
 # AI Video Upscale & HDR — RunPod Serverless Worker
 
-[![Deploy on RunPod](https://badge.runpod.io/deploy.svg)](https://www.runpod.io/console/hub/ThePsychDr/runpod-worker-upscale-hdr-v2)
+[![Deploy on RunPod](https://badge.runpod.io/deploy.svg)](https://www.runpod.io/console/hub/ThePsychDr/runpod-ai-video-upscale-hdr)
 
 Four-stage GPU pipeline for video enhancement:
 
@@ -152,6 +152,7 @@ This worker code is released under the MIT License. Model weights are subject to
 
 | Version | Change |
 |---------|--------|
+| v1.2.3 | Fix `no_denoise` flag not being passed to pipeline CLI |
 | v1.2.2 | Fix Docker build (use CUDA runtime API, no nvcc required) + fix Hub test GPU availability |
 | v1.2.1 | Worker version bump to v4.1 |
 | v1.2.0 | Tiled ITM inference — 4K HDR on 24GB GPUs (RTX 4090, A5000, A6000) without OOM. ~15x faster than guide fallback |

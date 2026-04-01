@@ -1,10 +1,14 @@
 # Planned Features
 
-## v1.2.0 — HDR Quality Improvements
+## Implemented
 
-- **Optimized recommended settings** from production testing (music videos, 1080p/4K sources)
-- **`highlight_boost` documentation** — specular highlight expansion for HDR pop (already implemented, needs docs + recommended defaults)
-- **`temporal_smooth` tuning** — reduced from 0.4 to 0.1 for more responsive scene transitions while avoiding brightness pumping
+### v1.2.0–v1.2.3 — HDR Quality + Stability
+
+- **Tiled ITM inference** — 4K HDR on 24GB GPUs without OOM (~15x faster than guide fallback)
+- **`highlight_boost`** — specular highlight expansion for HDR pop (0.0–1.0)
+- **`temporal_smooth`** — reduce frame-to-frame flicker (default 0.4)
+- **`no_denoise` flag** — skip first-stage artifact cleanup
+- **CUDA runtime API Docker build** — no nvcc required, smaller image
 
 ## TensorRT Acceleration (private builds only)
 
