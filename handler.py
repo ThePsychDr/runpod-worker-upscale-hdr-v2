@@ -150,6 +150,9 @@ def _build_cmd(input_path, output_path, job_input):
     # Boolean flags
     if no_face:
         cmd.append("--no-face")
+    if job_input.get("no_denoise"):
+        cmd.append("--dn")
+        cmd.append("0")
     if hdr_mode == "sdr" or job_input.get("no_itm"):
         cmd.append("--no-itm")
     if job_input.get("fp16", True):
