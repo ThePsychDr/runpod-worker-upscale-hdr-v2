@@ -127,6 +127,49 @@ Input videos are read from the bucket via `video_url`. Output is uploaded to `ou
 | `start_time` | float | — | Start time in seconds (for chunked processing) |
 | `chunk_duration` | float | — | Duration in seconds (for chunked processing) |
 
+## HDR Output Modes
+
+The default output is **HDR10 with static metadata** (MaxCLL/MaxFALL). This is the most compatible format and works on all HDR displays.
+
+### HDR10 (default)
+
+Static metadata — single MaxCLL/MaxFALL values computed from all frames. Works everywhere.
+
+```json
+{ "video_url": "input/video.mp4" }
+```
+
+Or explicitly:
+```json
+{ "video_url": "input/video.mp4", "hdr_mode": "hdr10" }
+```
+
+### HDR10+ (dynamic metadata)
+
+Per-frame dynamic metadata with bezier curves for scene-by-scene tone mapping. Slower encode (libx265 with `--dhdr10-info`). Benefits Samsung HDR10+ displays (S95B, S95C, S95D, etc.). Falls back to HDR10 static on non-HDR10+ displays.
+
+```json
+{ "video_url": "input/video.mp4", "hdr_mode": "hdr10plus" }
+```
+
+### SDR (no HDR)
+
+Skip tone mapping entirely — output upscaled SDR. Useful for content that doesn't benefit from HDR or when you want to grade HDR manually in DaVinci Resolve.
+
+```json
+{ "video_url": "input/video.mp4", "no_itm": true }
+```
+
+### Encoding Details
+
+| Mode | Encoder | Metadata | Compatibility |
+|------|---------|----------|---------------|
+| HDR10 | libx265 10-bit | Static MaxCLL/MaxFALL + mastering display SEI | All HDR displays |
+| HDR10+ | libx265 10-bit | Static + per-frame dynamic bezier curves | Samsung HDR10+ displays (falls back to HDR10 on others) |
+| SDR | NVENC hevc_nvenc (GPU) or libx265 (CPU fallback) | None | All displays |
+
+HDR modes always use **libx265 software encode** because NVENC cannot inject HDR metadata into the HEVC bitstream. SDR mode uses NVENC when available for faster GPU-accelerated encoding.
+
 ## Pipeline Stages
 
 | Stage | Model | Purpose |
