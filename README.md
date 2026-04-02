@@ -110,9 +110,9 @@ Input videos are read from the bucket via `video_url`. Output is uploaded to `ou
 | `no_denoise` | bool | false | Skip the first-stage artifact cleanup pass |
 | `face_strength` | float | 0.5 | Face restoration blend (0.0 = aggressive, 1.0 = bypass) |
 | `no_face` | bool | false | Skip face restoration |
-| `no_itm` | bool | false | Skip HDR tone mapping, output SDR |
-| `itm` | string | params_3DM | HDR checkpoint (`params_3DM`, `params_DaVinci`) |
+| `no_itm` | bool | false | Output SDR — skip HDR tone mapping entirely |
 | `hdr_mode` | string | hdr10 | HDR output mode (`hdr10`, `hdr10plus`) |
+| `itm` | string | params_3DM | HDR checkpoint (`params_3DM`, `params_DaVinci`) |
 | `crf` | int | 18 | Encoder quality (0–51, lower = better) |
 | `preset` | string | p7 | Encoder preset (p1–p7, p7 = best quality) |
 | `fp16` | bool | true | FP16 inference (faster, less VRAM) |
@@ -127,13 +127,19 @@ Input videos are read from the bucket via `video_url`. Output is uploaded to `ou
 | `start_time` | float | — | Start time in seconds (for chunked processing) |
 | `chunk_duration` | float | — | Duration in seconds (for chunked processing) |
 
-## HDR Output Modes
+## Output Modes
 
-The default output is **HDR10 with static metadata** (MaxCLL/MaxFALL). This is the most compatible format and works on all HDR displays.
+### SDR (no HDR)
+
+Skip tone mapping — output upscaled SDR. Useful when you want to grade HDR manually or the content doesn't need HDR.
+
+```json
+{ "video_url": "input/video.mp4", "no_itm": true }
+```
 
 ### HDR10 (default)
 
-Static metadata — single MaxCLL/MaxFALL values computed from all frames. Works everywhere.
+Static metadata — single MaxCLL/MaxFALL values computed from all frames. Works on all HDR displays.
 
 ```json
 { "video_url": "input/video.mp4" }
@@ -152,21 +158,13 @@ Per-frame dynamic metadata with bezier curves for scene-by-scene tone mapping. S
 { "video_url": "input/video.mp4", "hdr_mode": "hdr10plus" }
 ```
 
-### SDR (no HDR)
-
-Skip tone mapping entirely — output upscaled SDR. Useful for content that doesn't benefit from HDR or when you want to grade HDR manually in DaVinci Resolve.
-
-```json
-{ "video_url": "input/video.mp4", "no_itm": true }
-```
-
 ### Encoding Details
 
 | Mode | Encoder | Metadata | Compatibility |
 |------|---------|----------|---------------|
+| SDR | NVENC hevc_nvenc (GPU) or libx265 (CPU fallback) | None | All displays |
 | HDR10 | libx265 10-bit | Static MaxCLL/MaxFALL + mastering display SEI | All HDR displays |
 | HDR10+ | libx265 10-bit | Static + per-frame dynamic bezier curves | Samsung HDR10+ displays (falls back to HDR10 on others) |
-| SDR | NVENC hevc_nvenc (GPU) or libx265 (CPU fallback) | None | All displays |
 
 HDR modes always use **libx265 software encode** because NVENC cannot inject HDR metadata into the HEVC bitstream. SDR mode uses NVENC when available for faster GPU-accelerated encoding.
 
