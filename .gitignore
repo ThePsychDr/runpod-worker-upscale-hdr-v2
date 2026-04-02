@@ -1,1 +1,5 @@
 release.sh
+.env
+__pycache__/
+*.pyc
+output/

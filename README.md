@@ -27,7 +27,19 @@ All stages are optional. The pipeline auto-detects optimal settings based on inp
 2. Set your S3-compatible bucket credentials as environment variables (see [Configuration](#configuration))
 3. Deploy
 
-### Submit a job
+### GUI (Gradio)
+
+Run the Gradio UI locally to manage your serverless endpoint — probe videos, configure settings, submit jobs, monitor progress, and browse R2 output.
+
+```bash
+pip install gradio requests boto3
+cp .env.example .env  # edit with your RunPod API key + S3/R2 credentials
+python ui.py
+```
+
+Opens at `http://localhost:7860`. Requires [rclone](https://rclone.org/install/) configured for your S3/R2 bucket.
+
+### Submit a job (API)
 
 ```bash
 curl -X POST "https://api.runpod.ai/v2/YOUR_ENDPOINT/run" \
