@@ -1,6 +1,6 @@
 # AI Video Upscale & HDR — RunPod Serverless Worker
 
-[![RunPod](https://api.runpod.io/badge/ThePsychDr/runpod-ai-video-upscale-hdr)](https://www.runpod.io/console/hub/ThePsychDr/runpod-ai-video-upscale-hdr)
+[![Deploy on RunPod](https://img.shields.io/badge/RunPod-Deploy%20on%20Hub-673ab7)](https://www.runpod.io/console/hub/ThePsychDr/runpod-ai-video-upscale-hdr)
 
 Four-stage GPU pipeline for video upscaling and enhancement. Outputs SDR, HDR10, or HDR10+.
 
