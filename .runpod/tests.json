@@ -9,9 +9,9 @@
     }
   ],
   "config": {
-    "gpuTypeId": "ADA_24",
+    "gpuTypeId": "NVIDIA L40S",
     "gpuCount": 1,
-    "allowedCudaVersions": ["12.8"],
+    "allowedCudaVersions": ["12.8", "12.6", "12.4"],
     "env": [
       {
         "key": "BUCKET_ENDPOINT_URL",
