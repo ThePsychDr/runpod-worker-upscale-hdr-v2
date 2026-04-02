@@ -33,5 +33,3 @@ jobs:
           platforms: linux/amd64
           tags: |
             thepsych/upscale-hdr:${{ inputs.tag }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
