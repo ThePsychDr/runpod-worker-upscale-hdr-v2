@@ -71,16 +71,28 @@ RUN git clone --branch n7.1 --depth 1 https://git.ffmpeg.org/ffmpeg.git /tmp/ffm
 # requirement.
 #
 # Installed from rigaya's official .deb package. Verified via deb inspection:
-#   - Binary: /usr/bin/nvencc (statically linked)
+#   - Binary:  /usr/bin/nvencc
 #   - Depends: libc6 (>=2.31)  — already satisfied by ubuntu2204 base
-# So no `apt-get install -f` fallback needed. Symlink to NVEncC64 so the
-# upscale_hdr.py _has_nvencc() probe and handler.py startup log find it.
+# So no `apt-get install -f` fallback needed.
+#
+# Runtime note: nvencc is a CUDA application and dynamically links against
+# libcuda.so.1, which is NOT present during Docker build (the stub library
+# lives on the host NVIDIA driver install and is mounted into the container
+# by nvidia-container-toolkit when `--gpus all` is passed at runtime). We
+# therefore can't run `NVEncC64 --version` as a build smoke test here —
+# it would fail with "error while loading shared libraries: libcuda.so.1".
+# Runtime verification happens in handler.py at worker startup where the
+# driver is available and nvidia-container-toolkit has already mounted
+# libcuda.so.1. Symlink /usr/bin/nvencc -> /usr/local/bin/NVEncC64 so the
+# upscale_hdr.py _has_nvencc() probe and handler.py startup log find it
+# under the expected name.
 RUN wget -q -O /tmp/nvencc.deb \
     https://github.com/rigaya/NVEnc/releases/download/9.14/nvencc_9.14_amd64.deb && \
     dpkg -i /tmp/nvencc.deb && \
     rm /tmp/nvencc.deb && \
     ln -sf /usr/bin/nvencc /usr/local/bin/NVEncC64 && \
-    NVEncC64 --version | head -1
+    test -x /usr/local/bin/NVEncC64 && \
+    echo "NVEncC64 installed at /usr/local/bin/NVEncC64 (runtime --version check in handler.py)"
 
 # ─── Python dependencies ──────────────────────────────────────────────────────
 
