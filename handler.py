@@ -27,6 +27,7 @@ Job input schema:
     "temporal_smooth": 0.15,             # optional, reduce frame-to-frame flicker
     "batch": 4,                           # optional, ITM batch size
     "workers": 16,                        # optional, decode threads
+    "export_metadata": false,             # optional, write HDR metadata sidecar files (CSV + HDR10+ JSON) to bucket
     "test_mode": false                    # optional — Hub test mode
 }
 """
@@ -165,6 +166,10 @@ def _build_cmd(input_path, output_path, job_input):
     # Grain strength (float param)
     if "grain_strength" in job_input:
         cmd.extend(["--grain-strength", str(job_input["grain_strength"])])
+
+    # Export HDR metadata sidecar files (CSV + HDR10+ JSON)
+    if job_input.get("export_metadata"):
+        cmd.append("--export-metadata")
 
     # Chunk processing (multi-GPU splitting)
     if "start_time" in job_input:
@@ -386,6 +391,20 @@ def handler(job):
         output_size = os.path.getsize(output_path)
         print(f"Output: {output_path} ({output_size / 1024 / 1024:.1f} MB)")
 
+        # ── Locate sidecar metadata files (if --export-metadata was set) ─
+        # upscale_hdr.py writes them next to the output with stem suffixes
+        # Only generated in HDR10/HDR10+ mode (not SDR/no_itm)
+        output_stem = os.path.splitext(os.path.basename(output_path))[0]
+        sidecar_paths = {}
+        is_sdr = job_input.get("no_itm") or job_input.get("hdr_mode") == "sdr"
+        if job_input.get("export_metadata") and not is_sdr:
+            csv_path = os.path.join(output_dir, f"{output_stem}_metadata.csv")
+            json_path = os.path.join(output_dir, f"{output_stem}_hdr10plus.json")
+            if os.path.exists(csv_path):
+                sidecar_paths["metadata_csv"] = csv_path
+            if os.path.exists(json_path):
+                sidecar_paths["hdr10plus_json"] = json_path
+
         # ── Upload ───────────────────────────────────────────────────────
         runpod.serverless.progress_update(job, "Uploading result...")
 
@@ -399,20 +418,38 @@ def handler(job):
                 bucket_name=bucket_name,
                 prefix=f"output/{job_id}",
             )
-            return {
+            response = {
                 "output_url": presigned_url,
                 "filename": os.path.basename(output_path),
                 "size_mb": round(output_size / 1024 / 1024, 1),
                 "refresh_worker": True,
             }
+            # Upload sidecar metadata files alongside the video
+            for key, path in sidecar_paths.items():
+                try:
+                    sidecar_url = upload_file_to_bucket(
+                        file_name=os.path.basename(path),
+                        file_location=path,
+                        bucket_creds=bucket_creds,
+                        bucket_name=bucket_name,
+                        prefix=f"output/{job_id}",
+                    )
+                    response[f"{key}_url"] = sidecar_url
+                    print(f"Uploaded sidecar: {os.path.basename(path)}")
+                except Exception as e:
+                    print(f"Sidecar upload failed for {path}: {e}")
+            return response
         else:
-            return {
+            response = {
                 "output_path": output_path,
                 "filename": os.path.basename(output_path),
                 "size_mb": round(output_size / 1024 / 1024, 1),
                 "warning": "No bucket credentials — output stored on worker only",
                 "refresh_worker": True,
             }
+            if sidecar_paths:
+                response["sidecar_paths"] = sidecar_paths
+            return response
 
     except Exception as e:
         return {

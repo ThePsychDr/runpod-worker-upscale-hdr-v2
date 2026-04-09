@@ -7,6 +7,8 @@ on:
         description: "Docker image tag (e.g. v1.2, latest)"
         required: false
         default: "serverless"
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -25,11 +27,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Compute tags
+        id: tags
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            echo "tags=thepsych/upscale-hdr:${VERSION},thepsych/upscale-hdr:serverless" >> "$GITHUB_OUTPUT"
+          else
+            echo "tags=thepsych/upscale-hdr:${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           platforms: linux/amd64
-          tags: |
-            thepsych/upscale-hdr:${{ inputs.tag }}
+          tags: ${{ steps.tags.outputs.tags }}

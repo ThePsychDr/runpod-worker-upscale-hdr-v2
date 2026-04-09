@@ -2,6 +2,15 @@
 
 ## Implemented
 
+### v1.7.7 — HDR Mastering Metadata Export
+
+- **`export_metadata` flag** — writes HDR metadata sidecar files alongside the output for mastering workflows in DaVinci Resolve / manual x265 grading
+  - `<name>_metadata.csv` — per-frame luminance stats (max_nits, avg_nits, percentiles p1/p5/p10/p25/p50/p75/p90/p95/p99) with MaxCLL/MaxFALL summary line
+  - `<name>_hdr10plus.json` — HDR10+ dynamic metadata (Samsung spec), usable for both HDR10 static and HDR10+ dynamic grades
+- **Handler integration** — `"export_metadata": true` in job input uploads both sidecar files to R2 and returns `metadata_csv_url` + `hdr10plus_json_url` in the response
+- **HDR-only** — flag is a no-op in SDR/`no_itm` mode; warning printed on the worker
+- **See `docs/DAVINCI_HDR_GRADING.md` (local repo)** for the full grading workflow reference
+
 ### v1.7.6 — x265 Threading + Output Modes
 
 - **x265 threading optimization** — explicit `pools=N:wpp=1:lookahead-slices=4` on all libx265 encode paths. 1.5-3x faster HDR encoding with no quality impact

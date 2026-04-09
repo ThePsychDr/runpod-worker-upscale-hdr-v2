@@ -2374,6 +2374,27 @@ def run_pipeline(input_path, output_path, args):
             # Print metadata summary
             hdr_collector.print_summary()
 
+            # Export metadata sidecar files if requested
+            if getattr(args, 'export_metadata', False) and hdr_collector.frame_count > 0:
+                # CSV: per-frame luminance stats
+                csv_path = output_path.with_name(output_path.stem + "_metadata.csv")
+                with open(csv_path, "w") as cf:
+                    cf.write("frame,max_nits,avg_nits,p1,p5,p10,p25,p50,p75,p90,p95,p99\n")
+                    for i, s in enumerate(hdr_collector.frame_stats):
+                        p = s["percentiles"]
+                        cf.write(f"{i},{s['max_nits']:.2f},{s['avg_nits']:.2f},"
+                                 f"{p[1]:.2f},{p[5]:.2f},{p[10]:.2f},{p[25]:.2f},"
+                                 f"{p[50]:.2f},{p[75]:.2f},{p[90]:.2f},{p[95]:.2f},{p[99]:.2f}\n")
+                    cf.write(f"# MaxCLL={hdr_collector.max_cll} nits, MaxFALL={hdr_collector.max_fall} nits\n")
+                print(f"  [EXPORT] Luminance CSV: {csv_path}")
+
+                # JSON: HDR10+ dynamic metadata (useful for both HDR10 and HDR10+ grades)
+                export_json_path = output_path.with_name(output_path.stem + "_hdr10plus.json")
+                metadata_export = hdr_collector.generate_hdr10plus_json()
+                with open(export_json_path, "w") as jf:
+                    json.dump(metadata_export, jf, indent=2)
+                print(f"  [EXPORT] HDR10+ JSON:   {export_json_path}")
+
             # Verify raw frames were written
             raw_size = raw_temp.stat().st_size if raw_temp.exists() else 0
             expected_size = processed * out_w * out_h * 6  # rgb48le = 6 bytes/pixel
@@ -2546,11 +2567,15 @@ def parse_args():
                    help="Duration in seconds (for chunk processing)")
     p.add_argument("--raw-output", action="store_true",
                    help="Output raw RGB48 frames + metadata JSON instead of encoded video (for chunk stitching)")
+    p.add_argument("--export-metadata", action="store_true",
+                   help="Export HDR metadata sidecar files (per-frame luminance CSV + HDR10+ JSON)")
     return p.parse_args()
 
 
 def main():
     args = parse_args()
+    if args.export_metadata and args.no_itm:
+        print("  [WARNING] --export-metadata has no effect with --no-itm (SDR mode produces no HDR metadata)")
     input_path = Path(args.input)
     output_path = Path(args.output)
 
