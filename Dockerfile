@@ -28,8 +28,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nasm \
     yasm \
     pkg-config \
-    cmake \
-    build-essential \
     libx264-dev \
     libx265-dev \
     libnuma-dev \
@@ -71,13 +69,21 @@ RUN git clone --branch n7.1 --depth 1 https://git.ffmpeg.org/ffmpeg.git /tmp/ffm
 # the encode fails. A100 has no NVENC hardware, so it'll always use the libx265
 # fallback there — HDR10+ mode always uses libx265 because of the dhdr10-info
 # requirement.
-RUN git clone --branch 7.85 --depth 1 https://github.com/rigaya/NVEnc.git /tmp/NVEnc && \
-    cd /tmp/NVEnc && \
-    mkdir build && cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release .. && \
-    make -j$(nproc) && \
-    cp nvencc /usr/local/bin/NVEncC64 && \
-    rm -rf /tmp/NVEnc && \
+#
+# Install from rigaya's official .deb package (avoids cmake/make, submodules,
+# and libav* linkage conflicts with the from-source ffmpeg above). The package
+# installs the binary as /usr/bin/nvencc — we symlink to NVEncC64 to match the
+# binary name the upscale_hdr.py probe looks for. apt-get install -f handles
+# any missing transitive deps from the .deb.
+RUN wget -q -O /tmp/nvencc.deb \
+    https://github.com/rigaya/NVEnc/releases/download/9.14/nvencc_9.14_amd64.deb && \
+    apt-get update && \
+    (dpkg -i /tmp/nvencc.deb || apt-get install -f -y) && \
+    rm -rf /tmp/nvencc.deb /var/lib/apt/lists/* && \
+    NVENCC_BIN=$(find /usr -type f \( -name 'NVEncC64' -o -name 'NVEncC' -o -name 'nvencc' \) 2>/dev/null | head -1) && \
+    echo "Found NVEncC at: $NVENCC_BIN" && \
+    test -n "$NVENCC_BIN" && \
+    ln -sf "$NVENCC_BIN" /usr/local/bin/NVEncC64 && \
     NVEncC64 --version | head -1
 
 # ─── Python dependencies ──────────────────────────────────────────────────────

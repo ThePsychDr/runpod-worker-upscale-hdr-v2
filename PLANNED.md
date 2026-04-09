@@ -4,7 +4,7 @@
 
 ### v1.7.10 — NVEncC GPU HDR10 encode
 
-- **NVEncC baked into the image** — rigaya's standalone NVENC encoder (branch 7.85) is built from source during the Docker build and installed as `/usr/local/bin/NVEncC64`. Adds `cmake` + `build-essential` to the apt deps
+- **NVEncC baked into the image** — rigaya's standalone NVENC encoder (v9.14) is installed via the official `.deb` package and symlinked to `/usr/local/bin/NVEncC64`. Initial attempt built from source (`git clone --branch 7.85` + cmake + make) failed because `7.85` doesn't exist as a branch/tag on rigaya/NVEnc — the real tags are in the 9.xx series, and the upstream build script uses `./configure && make` on Linux rather than cmake. The `.deb` package avoids all of this complexity plus any libav* linkage conflicts with the from-source ffmpeg.
 - **GPU HDR10 encode** — `upscale_hdr.py` now detects `NVEncC64` at import time via `_has_nvencc()` and routes HDR10 mode through `encode_hdr10_nvencc()` when available. NVEncC injects `--master-display` and `--max-cll` SEI metadata directly into the HEVC bitstream — something FFmpeg's `hevc_nvenc` can't do (the 2019 patches were never merged upstream)
 - **Automatic fallback to libx265** — if NVEncC fails (bad exit code, missing binary, unsupported GPU like A100 which has no NVENC hardware), the HDR10 path falls back to the existing `encode_hdr10_static_twopass()` libx265 path. Fallback is transparent to the caller — same output file, same metadata, just slower
 - **HDR10+ unchanged** — HDR10+ mode still uses libx265 with `--dhdr10-info` because NVEncC doesn't support per-frame dynamic metadata. Only HDR10 static mode benefits from the GPU encode path
