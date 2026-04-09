@@ -10,6 +10,10 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,14 +31,25 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Compute tags
         id: tags
         run: |
+          # Lowercase GHCR namespace (required by spec)
+          GHCR_NS="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/upscale-hdr"
+          DH_NS="thepsych/upscale-hdr"
           if [ "${{ github.event_name }}" = "release" ]; then
             VERSION="${{ github.event.release.tag_name }}"
-            echo "tags=thepsych/upscale-hdr:${VERSION},thepsych/upscale-hdr:serverless" >> "$GITHUB_OUTPUT"
+            echo "tags=${DH_NS}:${VERSION},${DH_NS}:serverless,${GHCR_NS}:${VERSION},${GHCR_NS}:serverless" >> "$GITHUB_OUTPUT"
           else
-            echo "tags=thepsych/upscale-hdr:${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+            TAG="${{ inputs.tag }}"
+            echo "tags=${DH_NS}:${TAG},${GHCR_NS}:${TAG}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build and push
@@ -44,3 +59,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ steps.tags.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=upscale-hdr
+            org.opencontainers.image.description=AI video upscaling + HDR serverless worker
